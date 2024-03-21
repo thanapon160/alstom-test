@@ -29,12 +29,21 @@ const cid = ref([
 
 const calculateChange = () => {
   const change: (string|number)[][] = [];
+  const newCid: (string|number)[][] = [];
+
   let remaining = cash.value - price.value
   if (remaining === 0) {
     result.value = { status: 'OPEN', change: [] }
   }
-  const sortedCid = cid.value.sort((a, b) => Number(b[1]) - Number(a[1]));
+  const totalCash = cid.value.reduce((prev, cur)=> {
+    return prev + Number(cur[1])
+  }, 0)
+  const sortedCid = cid.value.toSorted((a, b) => Number(b[1]) - Number(a[1]));
 
+  // 500
+  // 350
+  // 100 = 2
+  // 50 = 1
   for (const [unit, amount] of sortedCid) {
     const value = CURRENCY[unit];
     const count = Math.floor(remaining / value);
@@ -44,10 +53,20 @@ const calculateChange = () => {
         unit, value * count
       ])
       remaining -= count * value;
+      newCid.push([
+        unit, Number(amount) - (value * count)
+
+      ])
+    } else {
+      newCid.push([
+        unit, amount
+      ])
     }
   }
 
-  if (remaining < 0) {
+  cid.value = newCid
+
+  if (remaining < 0 || totalCash < remaining) {
     result.value =  { status: 'INSUFFICIENT_FUNDS', change: [] };
   } else {
     result.value =  { status: 'OPEN', change };
